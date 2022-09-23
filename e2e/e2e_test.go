@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"context"
+	ibmpowervsv1 "sigs.k8s.io/cluster-api-provider-ibmcloud/api/v1beta1"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -36,6 +37,7 @@ func init() {
 	utilruntime.Must(gcpv1.AddToScheme(scheme.Scheme))
 	utilruntime.Must(clusterv1.AddToScheme(scheme.Scheme))
 	utilruntime.Must(mapiv1.AddToScheme(scheme.Scheme))
+	utilruntime.Must(ibmpowervsv1.AddToScheme(scheme.Scheme))
 }
 
 func TestAPIs(t *testing.T) {

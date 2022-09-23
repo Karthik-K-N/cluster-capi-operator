@@ -4,5 +4,6 @@
   "aws-cluster-api-controllers": "quay.io/ademicev/cluster-api-provider-aws:latest",
   "azure-cluster-api-controllers": "quay.io/ademicev/cluster-api-provider-azure:latest",
   "gcp-cluster-api-controllers": "quay.io/ademicev/cluster-api-provider-gcp:latest",
-  "kube-rbac-proxy": "gcr.io/kubebuilder/kube-rbac-proxy:v0.5.0"
+  "kube-rbac-proxy": "gcr.io/kubebuilder/kube-rbac-proxy:v0.5.0",
+  "ibmcloud-cluster-api-controllers": "gcr.io/k8s-staging-capi-ibmcloud/cluster-api-ibmcloud-controller:release-0.3"
 }

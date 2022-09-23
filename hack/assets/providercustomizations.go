@@ -16,6 +16,8 @@ func providerCustomizations(obj *unstructured.Unstructured, providerName string)
 		azureCustomizations(obj)
 	case "gcp":
 		gcpCustomizations(obj)
+	case powerVSProvider:
+		powerVSCustomizations(obj)
 	}
 }
 
@@ -93,6 +95,34 @@ func gcpCustomizations(obj *unstructured.Unstructured) {
 					switch env.Name {
 					case "GOOGLE_APPLICATION_CREDENTIALS":
 						env.Value = "/home/.gcp/service_account.json"
+					}
+				}
+			}
+		}
+
+		if err := scheme.Convert(deployment, obj, nil); err != nil {
+			panic(err)
+		}
+	}
+}
+
+func powerVSCustomizations(obj *unstructured.Unstructured) {
+	switch obj.GetKind() {
+	case "Deployment":
+		deployment := &appsv1.Deployment{}
+		if err := scheme.Convert(obj, deployment, nil); err != nil {
+			panic(err)
+		}
+
+		for i := range deployment.Spec.Template.Spec.Containers {
+			container := &deployment.Spec.Template.Spec.Containers[i]
+			if container.Name == "manager" {
+				//TODO(Karthik): Remove later, hack until we have capibm in openshift
+				container.Command = []string{"./manager"}
+				for j := range container.Args {
+					arg := &container.Args[j]
+					if *arg == "--powervs-provider-id-fmt=${POWERVS_PROVIDER_ID_FORMAT:=v1}" {
+						container.Args[j] = "--powervs-provider-id-fmt=v2"
 					}
 				}
 			}

@@ -17,6 +17,11 @@ data:
       type: InfrastructureProvider
       branch: release-4.11
       version: v1.0.0
+    - name: powervs
+      type: InfrastructureProvider
+      branch: release-0.3
+      version: v0.3.0
+    #TODO: Update this to use openshift org branch and version later
 
 kind: ConfigMap
 metadata:

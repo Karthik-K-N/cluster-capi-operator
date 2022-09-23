@@ -23,6 +23,11 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+const (
+	powerVSProvider  = "powervs"
+	ibmCloudProvider = "ibmcloud"
+)
+
 type provider struct {
 	Name       string                    `json:"name"`
 	PType      clusterctlv1.ProviderType `json:"type"`
@@ -84,6 +89,10 @@ func (p *provider) getMetadataUrl() string {
 	if p.PType == clusterctlv1.InfrastructureProviderType {
 		providerPath = fmt.Sprintf("-provider-%s", p.Name)
 	}
+	//TODO(Karthik): Remove later, hack to fetch metadata from upstream until the capibm repo is created in openshift org
+	if p.Name == ibmCloudProvider {
+		return fmt.Sprintf("https://raw.githubusercontent.com/kubernetes-sigs/cluster-api%s/%s/metadata.yaml", providerPath, p.Branch)
+	}
 
 	return fmt.Sprintf("https://raw.githubusercontent.com/openshift/cluster-api%s/%s/metadata.yaml",
 		providerPath,
@@ -95,6 +104,10 @@ func (p *provider) getProviderAssetUrl() string {
 	providerPath := ""
 	if p.PType == clusterctlv1.InfrastructureProviderType {
 		providerPath = fmt.Sprintf("-provider-%s", p.Name)
+	}
+	//TODO(Karthik): Remove later, hack to fetch asset from upstream until the capibm repo is created in openshift org
+	if p.Name == ibmCloudProvider {
+		return fmt.Sprintf("https://github.com/kubernetes-sigs/cluster-api%s//config/default?ref=%s", providerPath, p.Branch)
 	}
 	return fmt.Sprintf("https://github.com/openshift/cluster-api%s//config/default?ref=%s",
 		providerPath,
@@ -254,6 +267,11 @@ func (p *provider) providerSpec() operatorv1.ProviderSpec {
 	}
 
 	managerCommand := fmt.Sprintf("./bin/%s-controller-manager", managerCommandPrefix)
+
+	//TODO(Karthik): Remove later, we will be using capiibm image form upstream, hack until we build capiibm image from capibm repo is created in openshift org
+	if p.Name == ibmCloudProvider {
+		managerCommand = "./manager"
+	}
 	return operatorv1.ProviderSpec{
 		FetchConfig: &operatorv1.FetchConfiguration{
 			Selector: &metav1.LabelSelector{
@@ -288,6 +306,17 @@ func importProviders(providerName string) error {
 		return err
 	}
 
+	// for Power VS the upstream capi provider name is ibmcloud
+	// https://github.com/kubernetes-sigs/cluster-api/blob/main/cmd/clusterctl/client/config/providers_client.go#L210-L214
+	for index, provider := range providers {
+		if provider.Name == powerVSProvider {
+			providers[index].Name = ibmCloudProvider
+		}
+	}
+	if providerName == powerVSProvider {
+		providerName = ibmCloudProvider
+	}
+
 	// Write provider list config map to manifests
 	if err := writeProvidersCM(providerList); err != nil {
 		return fmt.Errorf("failed to write providers configmap: %v", err)
@@ -297,15 +326,30 @@ func importProviders(providerName string) error {
 		fmt.Printf("Processing provider %s: %s\n", p.PType, p.Name)
 
 		// Load manifests from github for specific provider
+
+		// for Power VS the upstream capi provider name is ibmcloud
+		var initialProviderName string
+		if p.Name == powerVSProvider {
+			initialProviderName = powerVSProvider
+			p.Name = ibmCloudProvider
+		}
+
 		err := p.loadComponents()
 		if err != nil {
 			return err
 		}
 
 		// Perform all manifest transformations
+		// We need to perform Power VS specific customization which may not needed for ibmcloud
+		if initialProviderName == powerVSProvider {
+			p.Name = powerVSProvider
+		}
 		resourceMap := processObjects(p.components.Objs(), p.Name)
 
 		// Write RBAC components to manifests, they will be managed by CVO
+		if p.Name == powerVSProvider {
+			p.Name = ibmCloudProvider
+		}
 		rbacFileName := fmt.Sprintf("%s03_rbac-roles.%s-%s.yaml", manifestPrefix, p.providerTypeName(), p.Name)
 		err = writeComponentsToManifests(rbacFileName, resourceMap[rbacKey])
 		if err != nil {

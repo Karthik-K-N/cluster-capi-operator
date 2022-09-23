@@ -35,13 +35,13 @@ Steps for infrastructure provider onboarding are documented [here](docs/provider
 Downscale cluster version operator deployment;
 
 ```sh
-kubectl scale deployment cluster-version-operator -nopenshift-cluster-version --replicas=0
+kubectl scale deployment cluster-version-operator -n openshift-cluster-version --replicas=0
 ```
 
 Downscale cluster CAPI operator deployment:
 
 ```sh
-kubectl scale deployment cluster-capi-operator -nopenshift-cluster-api --replicas=0
+kubectl scale deployment cluster-capi-operator -n openshift-cluster-api --replicas=0
 ```
 
 Compile and run operator:

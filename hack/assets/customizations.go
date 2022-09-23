@@ -224,7 +224,7 @@ func customizeDeployments(obj *unstructured.Unstructured) {
 			container.Image = "to.be/replaced:v99"
 		}
 		if container.Name == "kube-rbac-proxy" {
-			container.Image = "registry.ci.openshift.org/openshift:kube-rbac-proxy"
+			container.Image = "gcr.io/kubebuilder/kube-rbac-proxy:v0.8.0"
 		}
 		noFeatureGates := []string{}
 		for _, arg := range container.Args {

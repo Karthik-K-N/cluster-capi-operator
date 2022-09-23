@@ -67,6 +67,18 @@ func loadProviders(providerList []byte, providerName string) ([]provider, error)
 		return nil, err
 	}
 
+	// we can remove this check once the ibmcloud platform starts supporting cluster api
+	for index, provider := range providers {
+		if provider.Name == powerVSProvider {
+			// for Power VS the upstream capi provider name is set as ibmcloud
+			// https://github.com/Karthik-K-N/cluster-capi-operator/blob/8ede4edf772a3dab1b5eb817d366c0b5ce5fa806/hack/assets/vendor/sigs.k8s.io/cluster-api/cmd/clusterctl/client/config/providers_client.go#L188-L191
+			providers[index].Name = ibmCloudProvider
+		}
+	}
+	if providerName == powerVSProvider {
+		providerName = ibmCloudProvider
+	}
+
 	if providerName != "" {
 		for _, p := range providers {
 			if p.Name == providerName {
@@ -84,6 +96,9 @@ func (p *provider) getMetadataUrl() string {
 	if p.PType == clusterctlv1.InfrastructureProviderType {
 		providerPath = fmt.Sprintf("-provider-%s", p.Name)
 	}
+	if p.Name == ibmCloudProvider {
+		return fmt.Sprintf("https://raw.githubusercontent.com/kubernetes-sigs/cluster-api%s/%s/metadata.yaml", providerPath, p.Branch)
+	}
 
 	return fmt.Sprintf("https://raw.githubusercontent.com/openshift/cluster-api%s/%s/metadata.yaml",
 		providerPath,
@@ -95,6 +110,9 @@ func (p *provider) getProviderAssetUrl() string {
 	providerPath := ""
 	if p.PType == clusterctlv1.InfrastructureProviderType {
 		providerPath = fmt.Sprintf("-provider-%s", p.Name)
+	}
+	if p.Name == ibmCloudProvider {
+		return fmt.Sprintf("https://github.com/kubernetes-sigs/cluster-api%s//config/default?ref=%s", providerPath, p.Branch)
 	}
 	return fmt.Sprintf("https://github.com/openshift/cluster-api%s//config/default?ref=%s",
 		providerPath,
@@ -254,6 +272,9 @@ func (p *provider) providerSpec() operatorv1.ProviderSpec {
 	}
 
 	managerCommand := fmt.Sprintf("./bin/%s-controller-manager", managerCommandPrefix)
+	if p.Name == ibmCloudProvider {
+		managerCommand = "./manager"
+	}
 	return operatorv1.ProviderSpec{
 		FetchConfig: &operatorv1.FetchConfiguration{
 			Selector: &metav1.LabelSelector{
@@ -287,7 +308,6 @@ func importProviders(providerName string) error {
 	if err != nil {
 		return err
 	}
-
 	// Write provider list config map to manifests
 	if err := writeProvidersCM(providerList); err != nil {
 		return fmt.Errorf("failed to write providers configmap: %v", err)

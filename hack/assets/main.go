@@ -13,6 +13,11 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 )
 
+const (
+	powerVSProvider  = "powervs"
+	ibmCloudProvider = "ibmcloud"
+)
+
 var (
 	scheme              = runtime.NewScheme()
 	projDir             = path.Join("..", "..")

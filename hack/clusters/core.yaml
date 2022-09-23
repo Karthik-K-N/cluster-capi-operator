@@ -1,0 +1,11 @@
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: karthik-cluster
+  namespace: openshift-cluster-api
+spec:
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: IBMPowerVSCluster
+    name: karthik-cluster
+    namespace: openshift-cluster-api

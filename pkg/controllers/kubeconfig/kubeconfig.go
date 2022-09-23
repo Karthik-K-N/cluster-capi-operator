@@ -115,14 +115,14 @@ func (r *KubeconfigReconciler) reconcileKubeconfig(ctx context.Context) (ctrl.Re
 		return ctrl.Result{}, fmt.Errorf("unable to retrieve Secret object: %v", err)
 	}
 
-	if time.Since(tokenSecret.CreationTimestamp.Time) >= 30*time.Minute {
-		log.Info("Token secret is older than 30 minutes. Recreating it...")
-		// The token secret is managed by the CVO, it should be recreated shortly after deletion.
-		if err := r.Delete(ctx, tokenSecret); err != nil {
-			return ctrl.Result{}, fmt.Errorf("unable to delete Secret object: %v", err)
-		}
-		return ctrl.Result{RequeueAfter: 1 * time.Minute}, nil
-	}
+	//if time.Since(tokenSecret.CreationTimestamp.Time) >= 30*time.Minute {
+	//	log.Info("Token secret is older than 30 minutes. Recreating it...")
+	//	// The token secret is managed by the CVO, it should be recreated shortly after deletion.
+	//	if err := r.Delete(ctx, tokenSecret); err != nil {
+	//		return ctrl.Result{}, fmt.Errorf("unable to delete Secret object: %v", err)
+	//	}
+	//	return ctrl.Result{RequeueAfter: 1 * time.Minute}, nil
+	//}
 
 	// Generate kubeconfig
 	kubeconfig, err := generateKubeconfig(kubeconfigOptions{

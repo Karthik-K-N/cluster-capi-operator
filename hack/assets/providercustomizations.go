@@ -16,6 +16,8 @@ func providerCustomizations(obj *unstructured.Unstructured, providerName string)
 		azureCustomizations(obj)
 	case "gcp":
 		gcpCustomizations(obj)
+	case "ibmcloud":
+		powerVSCustomizations(obj)
 	}
 }
 
@@ -31,7 +33,7 @@ func operatorCustomizations(obj *unstructured.Unstructured) {
 			container := &deployment.Spec.Template.Spec.Containers[i]
 			if container.Name == "manager" {
 				container.Command = []string{"./bin/cluster-api-operator"}
-				container.Image = "registry.ci.openshift.org/openshift:cluster-kube-cluster-api-operator"
+				container.Image = "quay.io/kabhat/cluster-kube-cluster-api-operator:dev"
 				container.Name = "cluster-kube-cluster-api-operator"
 			}
 		}
@@ -93,6 +95,34 @@ func gcpCustomizations(obj *unstructured.Unstructured) {
 					switch env.Name {
 					case "GOOGLE_APPLICATION_CREDENTIALS":
 						env.Value = "/home/.gcp/service_account.json"
+					}
+				}
+			}
+		}
+
+		if err := scheme.Convert(deployment, obj, nil); err != nil {
+			panic(err)
+		}
+	}
+}
+
+func powerVSCustomizations(obj *unstructured.Unstructured) {
+	switch obj.GetKind() {
+	case "Deployment":
+		deployment := &appsv1.Deployment{}
+		if err := scheme.Convert(obj, deployment, nil); err != nil {
+			panic(err)
+		}
+
+		for i := range deployment.Spec.Template.Spec.Containers {
+			container := &deployment.Spec.Template.Spec.Containers[i]
+			if container.Name == "manager" {
+				//hack until we have capi in openshift
+				container.Command = []string{"./manager"}
+				for j := range container.Args {
+					arg := &container.Args[j]
+					if *arg == "--powervs-provider-id-fmt=${POWERVS_PROVIDER_ID_FORMAT:=v1}" {
+						container.Args[j] = "--powervs-provider-id-fmt=v2"
 					}
 				}
 			}

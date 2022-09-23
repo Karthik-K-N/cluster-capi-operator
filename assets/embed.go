@@ -19,12 +19,20 @@ const (
 
 	InfrastructureProviderKey          assetKey = "infrastructure-provider"
 	InfrastructureProviderConfigMapKey assetKey = "infrastructure-provider-configmap"
+
+	powerVSProvider  = "powervs"
+	ibmCloudProvider = "ibmcloud"
 )
 
 //go:embed core-capi/*.yaml infrastructure-providers/*.yaml
 var fs embed.FS
 
 func ReadCoreProviderAssets(scheme *runtime.Scheme) (map[assetKey]client.Object, error) {
+	fmt.Println("*****************************")
+	fmt.Println("*****************************")
+	fmt.Println("ReadCoreProviderAssets")
+	fmt.Println("*****************************")
+	fmt.Println("*****************************")
 	dir := "core-capi"
 	assetNames, err := fs.ReadDir(dir)
 	if err != nil {
@@ -50,15 +58,22 @@ func ReadCoreProviderAssets(scheme *runtime.Scheme) (map[assetKey]client.Object,
 	if len(objs) != 2 {
 		return nil, fmt.Errorf("expected exactly 2 assets for core provider, got %d", len(assetNames))
 	}
-
 	return objs, nil
 }
 
 func ReadInfrastructureProviderAssets(scheme *runtime.Scheme, platformType string) (map[assetKey]client.Object, error) {
+	fmt.Println("*****************************")
+	fmt.Println("*****************************")
+	fmt.Println("ReadInfrastructureProviderAssets")
+	fmt.Println("*****************************")
+	fmt.Println("*****************************")
 	dir := "infrastructure-providers"
 	assetNames, err := fs.ReadDir(dir)
 	if err != nil {
 		return nil, err
+	}
+	if platformType == powerVSProvider {
+		platformType = ibmCloudProvider
 	}
 
 	objs := map[assetKey]client.Object{}
@@ -84,7 +99,6 @@ func ReadInfrastructureProviderAssets(scheme *runtime.Scheme, platformType strin
 	if len(objs) != 2 {
 		return nil, fmt.Errorf("expected exactly 2 assets for infrastructure provider, got %d", len(objs))
 	}
-
 	return objs, nil
 }
 

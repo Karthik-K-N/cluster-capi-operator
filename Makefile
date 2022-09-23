@@ -31,6 +31,7 @@ build: operator
 
 operator:
 	go build -o bin/cluster-capi-operator cmd/cluster-capi-operator/main.go
+	#GOOS=linux GOARCH=ppc64le go build -o bin/cluster-capi-operator cmd/cluster-capi-operator/main.go
 
 unit: ginkgo envtest
 	KUBEBUILDER_ASSETS=$(shell $(ENVTEST) --bin-dir=$(shell pwd)/bin use $(ENVTEST_K8S_VERSION) -p path) ./hack/test.sh "./pkg/... ./assets/..." 5m
@@ -101,3 +102,41 @@ azure-cluster:
 
 gcp-cluster:
 	./hack/clusters/create-gcp.sh
+
+
+
+REGISTRY=quay.io/kabhat
+IMG=cluster-kube-cluster-api-operator
+
+TAG?=v1
+
+build-image-and-push-linux-amd64: init-buildx
+	{                                                                   \
+	set -e ;                                                            \
+	docker buildx build \
+		--build-arg TARGETPLATFORM=linux/amd64 --build-arg ARCH=amd64 \
+		-t $(REGISTRY)/$(IMG):$(TAG)_linux_amd64 . --push --target centos-base; \
+	}
+
+build-image-and-push-linux-ppc64le: init-buildx
+	{                                                                    \
+	set -e ;                                                             \
+	docker buildx build \
+		--build-arg TARGETPLATFORM=linux/ppc64le --build-arg ARCH=ppc64le\
+		-t $(REGISTRY)/$(IMG):$(TAG)_linux_ppc64le . --push --target centos-base; \
+	}
+
+init-buildx:
+	# Ensure we use a builder that can leverage it (the default on linux will not)
+	-docker buildx rm multiarch-multiplatform-builder
+	docker buildx create --use --name=multiarch-multiplatform-builder
+	docker run --rm --privileged multiarch/qemu-user-static --reset --credential yes --persistent yes
+	# Register gcloud as a Docker credential helper.
+	# Required for "docker buildx build --push".
+	docker login quay.io -u kabhat -p KingKarthik@123
+
+
+build-and-push-multi-arch: build-image-and-push-linux-amd64 build-image-and-push-linux-ppc64le
+	docker manifest create --amend $(REGISTRY)/$(IMG):$(TAG) $(REGISTRY)/$(IMG):$(TAG)_linux_amd64 $(REGISTRY)/$(IMG):$(TAG)_linux_ppc64le
+	docker manifest push -p $(REGISTRY)/$(IMG):$(TAG)
+

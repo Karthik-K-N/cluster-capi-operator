@@ -6,7 +6,7 @@ require (
 	github.com/gobuffalo/flect v0.2.4
 	github.com/onsi/ginkgo/v2 v2.1.3
 	github.com/onsi/gomega v1.19.0
-	github.com/openshift/api v0.0.0-20220222102030-354aa98a475c
+	github.com/openshift/api v0.0.0-20220628012702-9368b92de0ab
 	github.com/openshift/library-go v0.0.0-20220221165938-535fc9bdb13b
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/pflag v1.0.5

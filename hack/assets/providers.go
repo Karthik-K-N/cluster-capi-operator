@@ -23,6 +23,11 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
+const (
+	powerVSProvider  = "powervs"
+	ibmCloudProvider = "ibmcloud"
+)
+
 type provider struct {
 	Name       string                    `json:"name"`
 	PType      clusterctlv1.ProviderType `json:"type"`
@@ -297,15 +302,41 @@ func importProviders(providerName string) error {
 		fmt.Printf("Processing provider %s: %s\n", p.PType, p.Name)
 
 		// Load manifests from github for specific provider
+
+		// for Power VS the upstream capi provider name is ibmcloud
+		var initialProviderName string
+		if p.Name == powerVSProvider {
+			initialProviderName = powerVSProvider
+			p.Name = ibmCloudProvider
+		}
 		err := p.loadComponents()
 		if err != nil {
 			return err
 		}
 
+		// for Power VS the upstream cluster api provider name is ibmcloud
+		// https://github.com/kubernetes-sigs/cluster-api/blob/main/cmd/clusterctl/client/config/providers_client.go#L210-L214
+		for index, provider := range providers {
+			if provider.Name == powerVSProvider {
+				providers[index].Name = ibmCloudProvider
+			}
+		}
+		if providerName == powerVSProvider {
+			providerName = ibmCloudProvider
+		}
+
 		// Perform all manifest transformations
+
+		// We need to perform Power VS specific customization which may not needed for ibmcloud
+		if initialProviderName == powerVSProvider {
+			p.Name = powerVSProvider
+		}
 		resourceMap := processObjects(p.components.Objs(), p.Name)
 
 		// Write RBAC components to manifests, they will be managed by CVO
+		if p.Name == powerVSProvider {
+			p.Name = ibmCloudProvider
+		}
 		rbacFileName := fmt.Sprintf("%s03_rbac-roles.%s-%s.yaml", manifestPrefix, p.providerTypeName(), p.Name)
 		err = writeComponentsToManifests(rbacFileName, resourceMap[rbacKey])
 		if err != nil {

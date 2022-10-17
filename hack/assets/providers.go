@@ -292,7 +292,6 @@ func importProviders(providerName string) error {
 	if err != nil {
 		return err
 	}
-
 	// Write provider list config map to manifests
 	if err := writeProvidersCM(providerList); err != nil {
 		return fmt.Errorf("failed to write providers configmap: %v", err)
@@ -303,7 +302,8 @@ func importProviders(providerName string) error {
 
 		// Load manifests from github for specific provider
 
-		// for Power VS the upstream capi provider name is ibmcloud
+		// for Power VS the upstream cluster api provider name is ibmcloud
+		// https://github.com/kubernetes-sigs/cluster-api/blob/main/cmd/clusterctl/client/config/providers_client.go#L210-L214
 		var initialProviderName string
 		if p.Name == powerVSProvider {
 			initialProviderName = powerVSProvider
@@ -312,14 +312,6 @@ func importProviders(providerName string) error {
 		err := p.loadComponents()
 		if err != nil {
 			return err
-		}
-
-		// for Power VS the upstream cluster api provider name is ibmcloud
-		// https://github.com/kubernetes-sigs/cluster-api/blob/main/cmd/clusterctl/client/config/providers_client.go#L210-L214
-		for index, provider := range providers {
-			if provider.Name == powerVSProvider {
-				providers[index].Name = ibmCloudProvider
-			}
 		}
 		if providerName == powerVSProvider {
 			providerName = ibmCloudProvider
